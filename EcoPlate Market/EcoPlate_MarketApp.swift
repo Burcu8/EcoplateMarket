@@ -6,12 +6,33 @@
 //
 
 import SwiftUI
+import Firebase
 
 @main
 struct EcoPlate_MarketApp: App {
+    init() {
+        FirebaseApp.configure()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                    testFirestoreConnection()
+                }
         }
     }
 }
+
+func testFirestoreConnection() {
+    let db = Firestore.firestore()
+    db.collection("test").addDocument(data: ["message": "Firestore bağlantısı başarılı!"]) { error in
+        if let error = error {
+            print("Firestore Hata: \(error.localizedDescription)")
+        } else {
+            print("Firestore bağlantısı başarılı! ✅")
+        }
+    }
+}
+
+

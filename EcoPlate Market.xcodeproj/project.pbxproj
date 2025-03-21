@@ -6,12 +6,18 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		28DDB60A2D882B6700183169 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 28DDB6092D882B6700183169 /* FirebaseAuth */; };
+		28DDB60C2D882B6700183169 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 28DDB60B2D882B6700183169 /* FirebaseFirestore */; };
+		28DDB60E2D882B6700183169 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 28DDB60D2D882B6700183169 /* FirebaseStorage */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		28DDB5F42D8827AD00183169 /* EcoPlate Market.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "EcoPlate Market.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		28DDB5F62D8827AD00183169 /* EcoPlate Market */ = {
+		28601A5A2D8A06C700B4CCBC /* EcoPlate Market */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "EcoPlate Market";
 			sourceTree = "<group>";
@@ -23,6 +29,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				28DDB60A2D882B6700183169 /* FirebaseAuth in Frameworks */,
+				28DDB60C2D882B6700183169 /* FirebaseFirestore in Frameworks */,
+				28DDB60E2D882B6700183169 /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -32,7 +41,7 @@
 		28DDB5EB2D8827AD00183169 = {
 			isa = PBXGroup;
 			children = (
-				28DDB5F62D8827AD00183169 /* EcoPlate Market */,
+				28601A5A2D8A06C700B4CCBC /* EcoPlate Market */,
 				28DDB5F52D8827AD00183169 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -61,10 +70,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				28DDB5F62D8827AD00183169 /* EcoPlate Market */,
+				28601A5A2D8A06C700B4CCBC /* EcoPlate Market */,
 			);
 			name = "EcoPlate Market";
 			packageProductDependencies = (
+				28DDB6092D882B6700183169 /* FirebaseAuth */,
+				28DDB60B2D882B6700183169 /* FirebaseFirestore */,
+				28DDB60D2D882B6700183169 /* FirebaseStorage */,
 			);
 			productName = "EcoPlate Market";
 			productReference = 28DDB5F42D8827AD00183169 /* EcoPlate Market.app */;
@@ -94,6 +106,9 @@
 			);
 			mainGroup = 28DDB5EB2D8827AD00183169;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				28DDB6082D882B6700183169 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 28DDB5F52D8827AD00183169 /* Products */;
 			projectDirPath = "";
@@ -335,6 +350,35 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		28DDB6082D882B6700183169 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.9.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		28DDB6092D882B6700183169 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 28DDB6082D882B6700183169 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		28DDB60B2D882B6700183169 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 28DDB6082D882B6700183169 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		28DDB60D2D882B6700183169 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 28DDB6082D882B6700183169 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 28DDB5EC2D8827AD00183169 /* Project object */;
 }

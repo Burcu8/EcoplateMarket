@@ -6,19 +6,27 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct ContentView: View {
+    @State private var isUserLoggedIn = false  // İlk başta false olarak başlat
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        if isUserLoggedIn {
+            HomeView(isUserLoggedIn: $isUserLoggedIn)  // Giriş yapılmışsa HomeView'ı göster
+        } else {
+            LoginView(isUserLoggedIn: $isUserLoggedIn)  // Giriş yapılmamışsa LoginView'ı göster
         }
-        .padding()
+    }
+
+    init() {
+        checkUserSession()  // Oturum kontrolünü başlat
+    }
+
+    func checkUserSession() {
+        if Auth.auth().currentUser != nil {
+            isUserLoggedIn = true  // Eğer kullanıcı oturum açmışsa, HomeView'a yönlendir
+        }
     }
 }
 
-#Preview {
-    ContentView()
-}
