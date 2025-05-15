@@ -6,81 +6,129 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct AccountView: View {
     @Binding var isUserLoggedIn: Bool
+    @StateObject private var viewModel = MarketViewModel()
     
     var body: some View {
-        VStack(spacing: 20) {
-            HStack(spacing: 8) {
-                // Profil Fotoğrafı
-                Image(systemName: "person.crop.circle.fill")
-                    .resizable()
-                    .frame(width: 70, height: 70)
-                    .foregroundColor(.gray)
-                
-                // Profil Bilgileri
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Alpur Market")
-                        .font(.title2)
-                        .fontWeight(.bold)
+            NavigationView { // NavigationView ekledik
+                VStack(spacing: 20) {
+                    HStack(spacing: 8) {
+                        // Profil Fotoğrafı
+                        if let logoURL = viewModel.market?.logo_url, let url = URL(string: logoURL) {
+                            AsyncImage(url: url) { image in
+                                image.resizable()
+                            } placeholder: {
+                                Image(systemName: "person.circle.fill")
+                                    .resizable()
+                                    .foregroundColor(.gray)
+                            }
+                            .frame(width: 50, height: 50)
+                            .clipShape(Circle())
+                        } else {
+                            Image(systemName: "person.circle.fill")
+                                .resizable()
+                                .frame(width: 50, height: 50)
+                                .foregroundColor(.gray)
+                        }
+
+                        
+                        // Profil Bilgileri
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(viewModel.market?.name ?? "Market Adı")
+                                .font(.headline)
+                                .foregroundColor(.gray)
+                            
+                            Text(viewModel.market?.email ?? "Email")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            
+                            Text(viewModel.market?.phone ?? "Telefon")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.leading, 10) // Sol padding eklenebilir
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading) // Sağda boşluk bırakmamak için hizalama ekledik
+                    .padding(.top, 20)
                     
-                    Text("alpugrdal@gmail.com")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+                    Divider()
                     
-                    Text("+0212 216 5115")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+                    ScrollView {
+                                        VStack(spacing: 20) {
+                                            NavigationLink(destination: SellerDashboardView()) {
+                                                AccountOptionView(title: "📊 Satıcı Paneli")
+                                            }
+                                            Divider()
+                                            NavigationLink(destination: PastOrdersView()) {
+                                                AccountOptionView(title: "📦 Geçmiş Siparişler")
+                                            }
+                                            Divider()
+                                            NavigationLink(destination: SellerIdentityView(viewModel: viewModel)) {
+                                                AccountOptionView(title: "🆔 Satıcı Kimlik Bilgileri")
+                                            }
+                                            Divider()
+                                            NavigationLink(destination: AddressDetailView(viewModel: viewModel)) {
+                                                AccountOptionView(title: "🏠 Adres Bilgileri")
+                                            }
+                                            Divider()
+                                            NavigationLink(destination: BankAccountView()) {
+                                                AccountOptionView(title: "🏦 Banka Hesabıma Transfer")
+                                            }
+                                            Divider()
+                                            NavigationLink(destination: PromoCodesView()) {
+                                                AccountOptionView(title: "🎁 Promosyon Kodları")
+                                            }
+                                            Divider()
+                                            NavigationLink(destination: NotificationsView()) {
+                                                AccountOptionView(title: "🔔 Bildirimler")
+                                            }
+                                            Divider()
+                                            AccountOptionView(title: "❓ Yardım")
+                                            Divider()
+                                            AccountOptionView(title: "📝 Şikayetlerim")
+                                            Divider()
+                                        }
+                                        .foregroundColor(.black)
+                                        .padding(.top, 8)
+                                    }
+                    
+                    Button(action: {
+                        do {
+                            try Auth.auth().signOut()  // Firebase'den çıkış yap
+                            isUserLoggedIn = false     // Login ekranına yönlendir
+                            print("Çıkış yapıldı, isUserLoggedIn: \(isUserLoggedIn)") // Debug için
+                        } catch {
+                            print("Çıkış yapılamadı: \(error.localizedDescription)")
+                        }
+                    }) {
+                        Text("Çıkış Yap")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity, minHeight: 30)
+                            .padding()
+                            .background(Color.primaryA)
+                            .cornerRadius(18)
+                    }
+                    .padding(.top, 15)
+                    
+                    Spacer()
                 }
-                .padding(.leading, 10) // Sol padding eklenebilir
+                .padding()
+                .onAppear {
+                    // Sayfa yüklendiğinde çalışacak işlemler
+                    if let currentUserId = Auth.auth().currentUser?.uid {
+                        viewModel.loadMarket(marketId: currentUserId)
+                    } else {
+                        print("Kullanıcı girişi yapılmamış.")
+                    }
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading) // Sağda boşluk bırakmamak için hizalama ekledik
-            .padding(.top, 20)
-            
-            Divider()
-            
-            // Hesap İlgili Diğer Alanlar
-            VStack(spacing: 20) {
-                AccountOptionView(title: "📦 Geçmiş Siparişler")
-                Divider()
-                AccountOptionView(title: "🆔 Satıcı Kimlik Bilgileri")
-                Divider()
-                AccountOptionView(title: "🏠 Adres Bilgileri")
-                Divider()
-                AccountOptionView(title: "🏦 Banka Hesabıma Transfer")
-                Divider()
-                AccountOptionView(title: "🎁 Promosyon Kodları")
-                Divider()
-                AccountOptionView(title: "🔔 Bildirimler")
-                Divider()
-                AccountOptionView(title: "❓ Yardım")
-                Divider()
-                AccountOptionView(title: "📝 Şikayetlerim")
-                Divider()
-            }
-            .padding(.top, 8)
-            
-            // Çıkış Yap Butonu
-            NavigationLink(destination: LoginView(isUserLoggedIn: $isUserLoggedIn)) {
-                Text("Çıkış Yap")
-                    .font(.headline)
-                    .foregroundColor(.green)
-                    .frame(maxWidth: .infinity, minHeight: 30)
-                    .padding()
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(18)
-                    .shadow(radius: 5)
-            }
-            .padding(.top, 15)
-            
-            Spacer()
         }
-        .padding()
-        .navigationTitle("Hesap")
     }
-    
-}
+
 
 struct AccountOptionView: View {
     var title: String
@@ -94,15 +142,12 @@ struct AccountOptionView: View {
                 .foregroundColor(.blue)
         }
         .padding(.horizontal)
-        .onTapGesture {
-            // İlgili sayfaya yönlendirme kodu buraya gelecek
-        }
     }
 }
+
 
 struct AccountView_Previews: PreviewProvider {
     static var previews: some View {
         AccountView(isUserLoggedIn: .constant(true))
     }
 }
-

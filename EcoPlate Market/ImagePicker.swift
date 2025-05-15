@@ -13,31 +13,42 @@ struct ImagePicker: View {
     @State private var selectedItem: PhotosPickerItem? = nil
 
     var body: some View {
-        PhotosPicker(
-            selection: $selectedItem,
-            matching: .images,
-            photoLibrary: .shared()) {
+        VStack {
+            PhotosPicker(
+                selection: $selectedItem,
+                matching: .images,
+                photoLibrary: .shared()
+            ) {
                 Text("Fotoğraf Seç")
+                    .padding()
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(8)
             }
-            .onChange(of: selectedItem) { newItem in
-                Task {
-                    // Fetch selected asset in the form of Data
-                    if let selectedItem = selectedItem {
-                        // Retrieve selected asset
-                        do {
-                            let data = try await selectedItem.loadTransferable(type: Data.self)
-                            if let data, let uiImage = UIImage(data: data) {
-                                selectedImage = uiImage
-                            }
-                        } catch {
-                            print("Yükleme sırasında bir hata oluştu: \(error)")
+
+            if let selectedImage {
+                Image(uiImage: selectedImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: 200, maxHeight: 200)
+                    .padding()
+            }
+        }
+        .onChange(of: selectedItem) { newItem in
+            Task {
+                if let selectedItem = selectedItem {
+                    do {
+                        let data = try await selectedItem.loadTransferable(type: Data.self)
+                        if let data, let uiImage = UIImage(data: data) {
+                            selectedImage = uiImage
                         }
+                    } catch {
+                        print("Görsel seçilirken hata oluştu: \(error)")
                     }
                 }
             }
+        }
     }
 }
-
 
 
 

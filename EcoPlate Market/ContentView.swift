@@ -9,23 +9,46 @@ import SwiftUI
 import FirebaseAuth
 
 struct ContentView: View {
-    @State private var isUserLoggedIn = false  // İlk başta false olarak başlat
+    @State private var isUserLoggedIn = false
+    @State private var isLoading = true // Eklendi
+    @StateObject private var globalState = GlobalState()
 
     var body: some View {
-        if isUserLoggedIn {
-            HomeView(isUserLoggedIn: $isUserLoggedIn)  // Giriş yapılmışsa HomeView'ı göster
-        } else {
-            LoginView(isUserLoggedIn: $isUserLoggedIn)  // Giriş yapılmamışsa LoginView'ı göster
+        Group {
+            if isLoading {
+                ProgressView("Yükleniyor...")
+            } else if isUserLoggedIn {
+                HomeView(isUserLoggedIn: $isUserLoggedIn)
+            } else {
+                LoginView(isUserLoggedIn: $isUserLoggedIn)
+                    .environmentObject(globalState)
+            }
+        }
+        .onAppear {
+            checkUserSession()
+        }
+        .onChange(of: isUserLoggedIn) { newValue in
+            if !newValue {
+                signOutUser()
+            }
         }
     }
 
-    init() {
-        checkUserSession()  // Oturum kontrolünü başlat
+    func checkUserSession() {
+        Auth.auth().addStateDidChangeListener { auth, user in
+            DispatchQueue.main.async {
+                self.isUserLoggedIn = user != nil
+                self.isLoading = false // Oturum kontrolü tamamlandı
+            }
+        }
     }
 
-    func checkUserSession() {
-        if Auth.auth().currentUser != nil {
-            isUserLoggedIn = true  // Eğer kullanıcı oturum açmışsa, HomeView'a yönlendir
+    func signOutUser() {
+        do {
+            try Auth.auth().signOut()
+            print("User signed out successfully")
+        } catch let error {
+            print("Error signing out: \(error.localizedDescription)")
         }
     }
 }

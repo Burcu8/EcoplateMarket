@@ -10,6 +10,9 @@ import Firebase
 
 @main
 struct EcoPlate_MarketApp: App {
+    
+    
+    
     init() {
         FirebaseApp.configure()
     }
@@ -17,6 +20,7 @@ struct EcoPlate_MarketApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                
                 .onAppear {
                     testFirestoreConnection()
                 }
