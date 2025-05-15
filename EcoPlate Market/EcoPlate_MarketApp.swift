@@ -20,7 +20,7 @@ struct EcoPlate_MarketApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                
+                .preferredColorScheme(.light)
                 .onAppear {
                     testFirestoreConnection()
                 }
