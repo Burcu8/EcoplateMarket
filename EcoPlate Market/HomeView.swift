@@ -11,6 +11,7 @@ import FirebaseFirestore
 
 struct HomeView: View {
     @Binding var isUserLoggedIn: Bool
+    let currentMarketId: String
     
     
     var body: some View {
@@ -34,7 +35,7 @@ struct HomeView: View {
                 }
             
             // Hesap Sekmesi
-            AccountView(isUserLoggedIn: $isUserLoggedIn)
+            AccountView(isUserLoggedIn: $isUserLoggedIn, currentMarketId: currentMarketId)
                 .tabItem {
                     VStack {
                         Image(systemName: "person.crop.circle")
@@ -93,18 +94,18 @@ struct StoreView: View {
                     }
 
                     VStack(alignment: .leading) {
-                        Text(viewModel.market?.name ?? "Market Adı")
+                        Text(viewModel.market?.name.isEmpty == false ? viewModel.market!.name : "Bilinmeyen Market")
                             .font(.headline)
                             .foregroundColor(.gray)
 
-                        Text(viewModel.market?.email ?? "Email")
+                        Text(viewModel.market?.email.isEmpty == false ? viewModel.market!.email : "test@gmail.com")
                             .font(.subheadline)
                             .foregroundColor(.gray)
                     }
 
                     Spacer()
 
-                    Text(viewModel.market?.phone ?? "Telefon")
+                    Text(viewModel.market?.phone.isEmpty == false ? viewModel.market!.phone : "+0212 212 5313")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
@@ -428,7 +429,7 @@ struct HomeView_Previews: PreviewProvider {
     @State static var isUserLoggedIn = true
     
     static var previews: some View {
-        HomeView(isUserLoggedIn: $isUserLoggedIn)
+        HomeView(isUserLoggedIn: $isUserLoggedIn, currentMarketId: "wiOiNpZKdLSrLcZG2U6tAG6P1gi2")
     }
 }
 

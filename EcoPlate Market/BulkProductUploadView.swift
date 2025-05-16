@@ -41,11 +41,11 @@ struct BulkProductUploadView: View {
                             .foregroundColor(.gray)
                     }
                     
-                    Text(viewModel.market?.name ?? "Market Adı")
+                    Text(viewModel.market?.name.isEmpty == false ? viewModel.market!.name : "Bilinmeyen Market")
                         .font(.headline)
                         .foregroundColor(.gray)
                     
-                    Text(viewModel.market?.email ?? "Email")
+                    Text(viewModel.market?.email.isEmpty == false ? viewModel.market!.email : "test@gmail.com")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }

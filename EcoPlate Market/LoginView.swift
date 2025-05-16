@@ -20,6 +20,8 @@ struct LoginView: View {
     @State private var password = ""
     @State private var isLoading = false  // Eksikti, eklendi
     @Binding var isUserLoggedIn: Bool  // Parent view'dan geliyor
+    @State private var isMarket = false
+
     
     @EnvironmentObject var globalState: GlobalState  // Global alert durumu
 
@@ -154,29 +156,34 @@ struct LoginView: View {
             .document(email)
             .getDocument { document, error in
                 if let error = error {
-                    globalState.alertMessage = "Kullanıcı bilgileri alınırken hata oluştu: \(error.localizedDescription)"
-                    globalState.showAlert = true
+                    self.globalState.alertMessage = "Kullanıcı bilgileri çekilirken hata oluştu: \(error.localizedDescription)"
+                    self.globalState.showAlert = true
+                    print("Error fetching user data: \(error.localizedDescription)")
                     return
                 }
+                
+                if let document = document, document.exists {
+                    if let isMarket = document.data()?["is_market"] as? Bool {
+                        self.isMarket = isMarket
+                        print("User data fetched - is_market: \(self.isMarket)")
+                    }
+                    
+                    if self.isMarket {
+                        self.isUserLoggedIn = true
+                        UserDefaults.standard.set(true, forKey: "isMarket")
+                    } else {
+                        self.globalState.alertMessage = "Bu hesap market hesabı değil. Giriş izni yok."
+                        self.globalState.showAlert = true
+                    }
 
-                guard let document = document, document.exists,
-                      let isUser = document.data()?["is_user"] as? Bool else {
-                    globalState.alertMessage = "Kullanıcı bilgisi bulunamadı."
-                    globalState.showAlert = true
-                    return
+                } else {
+                    self.globalState.alertMessage = "Kullanıcı bilgisi bulunamadı."
+                    self.globalState.showAlert = true
+                    print("User document not found.")
                 }
-
-                if isUser {
-                    globalState.alertMessage = "Bu hesap market hesabı değil. Lütfen doğru hesapla giriş yapın."
-                    globalState.showAlert = true
-                    return
-                }
-
-                // Başarılı giriş
-                isUserLoggedIn = true
-                UserDefaults.standard.set(false, forKey: "isUser")
             }
     }
+
 }
 
 // MARK: - Preview

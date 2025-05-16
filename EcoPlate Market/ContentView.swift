@@ -12,13 +12,14 @@ struct ContentView: View {
     @State private var isUserLoggedIn = false
     @State private var isLoading = true // Eklendi
     @StateObject private var globalState = GlobalState()
+    let currentMarketId: String
 
     var body: some View {
         Group {
             if isLoading {
                 ProgressView("Yükleniyor...")
             } else if isUserLoggedIn {
-                HomeView(isUserLoggedIn: $isUserLoggedIn)
+                HomeView(isUserLoggedIn: $isUserLoggedIn, currentMarketId: currentMarketId)
             } else {
                 LoginView(isUserLoggedIn: $isUserLoggedIn)
                     .environmentObject(globalState)

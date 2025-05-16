@@ -11,6 +11,7 @@ import FirebaseAuth
 struct AccountView: View {
     @Binding var isUserLoggedIn: Bool
     @StateObject private var viewModel = MarketViewModel()
+    let currentMarketId: String
     
     var body: some View {
             NavigationView { // NavigationView ekledik
@@ -37,19 +38,20 @@ struct AccountView: View {
                         
                         // Profil Bilgileri
                         VStack(alignment: .leading, spacing: 5) {
-                            Text(viewModel.market?.name ?? "Market Adı")
+                            Text(viewModel.market?.name.isEmpty == false ? viewModel.market!.name : "Bilinmeyen Market")
                                 .font(.headline)
                                 .foregroundColor(.gray)
                             
-                            Text(viewModel.market?.email ?? "Email")
+                            Text(viewModel.market?.email.isEmpty == false ? viewModel.market!.email : "test@gmail.com")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                             
-                            Text(viewModel.market?.phone ?? "Telefon")
+                            Text(viewModel.market?.phone.isEmpty == false ? viewModel.market!.phone : "+0212 212 5313")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                         }
-                        .padding(.leading, 10) // Sol padding eklenebilir
+                        .padding(.leading, 10)
+
                     }
                     .frame(maxWidth: .infinity, alignment: .leading) // Sağda boşluk bırakmamak için hizalama ekledik
                     .padding(.top, 20)
@@ -62,8 +64,8 @@ struct AccountView: View {
                                                 AccountOptionView(title: "📊 Satıcı Paneli")
                                             }
                                             Divider()
-                                            NavigationLink(destination: PastOrdersView()) {
-                                                AccountOptionView(title: "📦 Geçmiş Siparişler")
+                                            NavigationLink(destination: OrderListView(currentMarketId: currentMarketId)) {
+                                                AccountOptionView(title: "📦 Siparişler")
                                             }
                                             Divider()
                                             NavigationLink(destination: SellerIdentityView(viewModel: viewModel)) {
@@ -148,6 +150,6 @@ struct AccountOptionView: View {
 
 struct AccountView_Previews: PreviewProvider {
     static var previews: some View {
-        AccountView(isUserLoggedIn: .constant(true))
+        AccountView(isUserLoggedIn: .constant(true), currentMarketId: "wiOiNpZKdLSrLcZG2U6tAG6P1gi2")
     }
 }
