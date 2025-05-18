@@ -10,36 +10,33 @@ import FirebaseAuth
 
 struct ContentView: View {
     @State private var isUserLoggedIn = false
-    @State private var isLoading = true // Eklendi
+    @State private var isLoading = true
+    @State private var currentMarketId: String? = nil
     @StateObject private var globalState = GlobalState()
-    let currentMarketId: String
 
     var body: some View {
         Group {
             if isLoading {
-                ProgressView("Yükleniyor...")
-            } else if isUserLoggedIn {
-                HomeView(isUserLoggedIn: $isUserLoggedIn, currentMarketId: currentMarketId)
+                LoadingView()
+            } else if isUserLoggedIn, let marketId = currentMarketId {
+                HomeView(isUserLoggedIn: $isUserLoggedIn, currentMarketId: marketId)
             } else {
                 LoginView(isUserLoggedIn: $isUserLoggedIn)
                     .environmentObject(globalState)
             }
         }
         .onAppear {
-            checkUserSession()
-        }
-        .onChange(of: isUserLoggedIn) { newValue in
-            if !newValue {
-                signOutUser()
-            }
-        }
-    }
-
-    func checkUserSession() {
-        Auth.auth().addStateDidChangeListener { auth, user in
-            DispatchQueue.main.async {
-                self.isUserLoggedIn = user != nil
-                self.isLoading = false // Oturum kontrolü tamamlandı
+            Auth.auth().addStateDidChangeListener { _, user in
+                DispatchQueue.main.async {
+                    if let user = user {
+                        self.currentMarketId = user.uid
+                        self.isUserLoggedIn = true
+                        testFirestoreConnection()
+                    } else {
+                        self.isUserLoggedIn = false
+                    }
+                    self.isLoading = false
+                }
             }
         }
     }
