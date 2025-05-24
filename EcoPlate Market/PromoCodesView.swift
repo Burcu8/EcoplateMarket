@@ -8,6 +8,12 @@ import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
 
+extension View {
+    func hideKeyboard2() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
 struct PromoCode: Identifiable {
     var id: String
     var promotionName: String
@@ -103,6 +109,9 @@ struct PromoCodesView: View {
             Spacer()
         }
         .padding()
+        .onTapGesture {
+            self.hideKeyboard2()
+        }
         .onAppear {
             if !marketId.isEmpty {
                 fetchPromoCodes()
@@ -129,6 +138,7 @@ struct PromoCodesView: View {
 
     // ➕ Promosyon kodu ekle (Yeni root-level yol)
     func addPromoCode() {
+        hideKeyboard2()  // Klavyeyi kapat
         guard !newPromoCode.isEmpty,
               let percentage = Int(newPercentage),
               !marketId.isEmpty else { return }

@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+extension View {
+    func hideKeyboard3() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
 struct HelpView: View {
     // Kullanıcı destek mesajı için state
     @State private var supportMessage: String = ""
@@ -53,6 +59,7 @@ struct HelpView: View {
                         // Boş mesaj gönderilmesin
                         showAlert = true
                     } else {
+                        hideKeyboard3()
                         // Burada mesajı backend’e veya e-posta sistemine gönderme işlemi yapılabilir
                         supportMessage = ""  // Mesaj kutusunu temizle
                     }
@@ -72,6 +79,9 @@ struct HelpView: View {
             }
             .padding()
         }
+        .onTapGesture {
+                hideKeyboard3()
+            }
         .navigationTitle("Yardım")
     }
 }
