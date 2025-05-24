@@ -6,13 +6,35 @@
 //
 
 import SwiftUI
+import UIKit
 import FirebaseAuth
 import FirebaseFirestore
+
+extension View {
+    func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
 
 struct HomeView: View {
     @Binding var isUserLoggedIn: Bool
     let currentMarketId: String
     
+    // init içinde tab bar görünümünü ayarlıyoruz
+    init(isUserLoggedIn: Binding<Bool>, currentMarketId: String) {
+        self._isUserLoggedIn = isUserLoggedIn
+        self.currentMarketId = currentMarketId
+        
+        // Tab bar arka plan ayarı
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor.white // istediğin renk
+        
+        UITabBar.appearance().standardAppearance = appearance
+        if #available(iOS 15.0, *) {
+            UITabBar.appearance().scrollEdgeAppearance = appearance
+        }
+    }
     
     var body: some View {
         TabView {
@@ -46,35 +68,43 @@ struct HomeView: View {
         .accentColor(.primaryA)
     }
 }
-
 struct StoreView: View {
     @StateObject private var firebaseManager = FirebaseManager()
-    @State private var products: [DynamicProduct] = []
-    @State private var selectedCategory: String = "Meyve"
     @State private var searchText: String = ""
+    @State private var selectedCategory: String = "Tümü"
+    @State private var showCategories = false
     @StateObject private var viewModel = MarketViewModel()
     
+    let categories = ["Tümü", "İçecek", "Meyve & Sebze", "Fırın", "Bakliyat", "Et Ürünleri","Temel Gıda", "Yağ", "Süt Ürünleri"]
+
+    // Ürünleri kategoriye göre filtrele (örnek filtreleme)
     var filteredDynamicProducts: [DynamicProduct] {
-        if searchText.isEmpty {
-            return firebaseManager.products
+        if selectedCategory == "Tümü" {
+            // Kategori filtresi yok, tüm ürünleri göster
+            if searchText.isEmpty {
+                return firebaseManager.products
+            } else {
+                // Arama varsa aramaya göre filtrele
+                return firebaseManager.products.filter {
+                    $0.name.lowercased().contains(searchText.lowercased())
+                }
+            }
         } else {
-            return firebaseManager.products.filter { $0.name.lowercased().contains(searchText.lowercased()) }
+            // Kategoriye göre filtrele
+            if searchText.isEmpty {
+                return firebaseManager.products.filter { $0.category == selectedCategory }
+            } else {
+                return firebaseManager.products.filter {
+                    $0.name.lowercased().contains(searchText.lowercased()) &&
+                    $0.category == selectedCategory
+                }
+            }
         }
     }
-
-    var filteredStaticProducts: [Product] {
-        if searchText.isEmpty {
-            return sampleProducts
-        } else {
-            return sampleProducts.filter { $0.name.lowercased().contains(searchText.lowercased()) }
-        }
-    }
-
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 10) {
-
-                // 🔽 MARK: MARKET BİLGİLERİ
+                // MARK: Market Bilgileri
                 HStack {
                     if let logoURL = viewModel.market?.logo_url, let url = URL(string: logoURL) {
                         AsyncImage(url: url) { image in
@@ -113,13 +143,60 @@ struct StoreView: View {
 
                 Divider().padding(.top, 0)
 
-                TextField("Mağazada Ara...", text: $searchText)
-                    .padding(10)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
-                    .padding(.horizontal)
+                // MARK: Arama Çubuğu ve Üç Nokta Butonu
+                HStack(spacing: 0) {
+                    TextField("Mağazada Ara...", text: $searchText)
+                        .padding(10)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                    
+                    Button(action: {
+                        withAnimation {
+                            showCategories.toggle()
+                        }
+                    }) {
+                        Image(systemName: "ellipsis")
+                            .rotationEffect(.degrees(90)) // Dikey üç nokta
+                            .font(.title2)
+                            .foregroundColor(.gray)
+                            .padding(.horizontal, 10)
+                            .contentShape(Rectangle()) // Butonun tıklanabilir alanını büyütür
+                    }
+                }
+                .padding(.horizontal)
+                .zIndex(1)
 
-                CategorySelectorView(selectedCategory: $selectedCategory)
+                // MARK: Kategori Menüsü (Dropdown)
+                if showCategories {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ScrollView(.vertical, showsIndicators: true) {
+                            VStack(alignment: .leading, spacing: 0) {
+                                ForEach(categories, id: \.self) { category in
+                                    Text(category)
+                                        .padding()
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .background(category == selectedCategory ? Color.blue.opacity(0.2) : Color.white)
+                                        .onTapGesture {
+                                            selectedCategory = category
+                                            withAnimation {
+                                                showCategories = false
+                                            }
+                                            hideKeyboard()
+                                        }
+                                        .foregroundColor(.black)
+                                }
+                            }
+                        }
+                        .frame(maxHeight: 3 * 44) // Yaklaşık 3 satır yüksekliği (44 standart satır yüksekliği)
+                    }
+                    .background(Color.white)
+                    .cornerRadius(8)
+                    .shadow(radius: 5)
+                    .padding(.horizontal)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(2)
+                }
+
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 10) {
@@ -128,23 +205,31 @@ struct StoreView: View {
                         CategorySection(title: "Özel Tekliflerim", products: sampleProducts, isDynamic: false)
                     }
                     .padding(.top, 1)
+                
                 }
             }
             .onAppear {
                 firebaseManager.fetchProductsForCurrentUser()
                 
-                // ✅ Kullanıcının UID’siyle market verisi çek
                 if let currentUserId = Auth.auth().currentUser?.uid {
                     viewModel.loadMarket(marketId: currentUserId)
                 } else {
                     print("Kullanıcı girişi yapılmamış.")
                 }
             }
+            // Klavye kapatma ve menüyü kapatma için boş alan tıklama
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if showCategories {
+                    withAnimation {
+                        showCategories = false
+                    }
+                }
+                hideKeyboard()
+            }
         }
     }
 }
-
-
 
 struct CategorySection<T: Identifiable>: View {
     var title: String
@@ -166,7 +251,7 @@ struct CategorySection<T: Identifiable>: View {
                 Spacer()
 
                 // "Tümünü Gör" butonu
-                NavigationLink(destination: AllProductsView(products: products, isDynamic: isDynamic)) {
+                NavigationLink(destination: AllProductsView(isUserLoggedIn: $isUserLoggedIn, products: products, isDynamic: isDynamic)) {
                     Text("Tümünü Gör")
                         .font(.footnote)
                         .foregroundColor(.black)
@@ -370,8 +455,10 @@ struct ProductDetailView: View {
 }
 
 struct AllProductsView<T: Identifiable>: View {
+    @Binding var isUserLoggedIn: Bool // 💡 binding olarak al
     var products: [T]
     var isDynamic: Bool
+
     let columns = [
         GridItem(.flexible()),
         GridItem(.flexible())
@@ -382,43 +469,21 @@ struct AllProductsView<T: Identifiable>: View {
             LazyVGrid(columns: columns, spacing: 16) {
                 ForEach(products) { product in
                     if isDynamic, let dynamicProduct = product as? DynamicProduct {
-                        DynamicProductCardView(product: dynamicProduct)
+                        NavigationLink(destination: DynamicProductDetailView(product: dynamicProduct, isUserLoggedIn: $isUserLoggedIn)) {
+                            DynamicProductCardView(product: dynamicProduct)
+                                .contentShape(Rectangle())
+                        }
                     } else if let staticProduct = product as? Product {
-                        ProductCardView(product: staticProduct)
+                        NavigationLink(destination: ProductDetailView(product: staticProduct)) {
+                            ProductCardView(product: staticProduct)
+                                .contentShape(Rectangle())
+                        }
                     }
                 }
             }
             .padding()
         }
         .navigationTitle("Tüm Ürünler")
-    }
-
-}
-
-struct ProductListView: View {
-    var selectedCategory: String  // Seçilen kategori dışarıdan alınıyor
-
-    let allProducts: [Product] = [
-        Product(id: "1", name: "Elma", price: "19.99", oldPrice: "29.99", imageName: "elma", skt: "12.05.2025", kg: "1", category: "Meyve"),
-        Product(id: "2", name: "Havuç", price: "8.99", oldPrice: "12.99", imageName: "havuç", skt: "15.05.2025", kg: "1", category: "Sebze"),
-        Product(id: "3", name: "Portakal", price: "14.99", oldPrice: "22.99", imageName: "portakal", skt: "18.05.2025", kg: "1", category: "Meyve"),
-        Product(id: "4", name: "Kola", price: "10.99", oldPrice: "15.99", imageName: "kola", skt: "10.07.2025", kg: "1", category: "İçecek")
-    ]
-    
-    var filteredProducts: [Product] {
-        allProducts.filter { $0.category == selectedCategory }
-    }
-    
-    var body: some View {
-        // Ürün kartları
-        ScrollView {
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
-                ForEach(filteredProducts) { product in
-                    ProductCardView(product: product)
-                }
-            }
-            .padding()
-        }
     }
 }
 
@@ -433,3 +498,4 @@ struct HomeView_Previews: PreviewProvider {
     }
 }
 
+                        

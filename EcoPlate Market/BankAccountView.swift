@@ -29,11 +29,11 @@ struct BankAccountView: View {
                     }
                 }
 
-                BankInfoRow(icon: "🏦", title: "Banka Adı", value: $bankName, isEditing: isEditing)
-                BankInfoRow(icon: "💳", title: "Hesap Numarası", value: $accountNumber, isEditing: isEditing)
-                BankInfoRow(icon: "🌍", title: "IBAN Numarası", value: $iban, isEditing: isEditing)
-                BankInfoRow(icon: "📂", title: "Hesap Türü", value: $accountType, isEditing: isEditing)
-                BankInfoRow(icon: "💰", title: "Bakiye", value: $balance, isEditing: isEditing)
+                BankInfoRow(icon: "🏦", title: "Banka Adı", value: $bankName, isEditing: isEditing, isEditable: true)
+                BankInfoRow(icon: "💳", title: "Hesap Numarası", value: $accountNumber, isEditing: isEditing, isEditable: true)
+                BankInfoRow(icon: "🌍", title: "IBAN Numarası", value: $iban, isEditing: isEditing, isEditable: true)
+                BankInfoRow(icon: "📂", title: "Hesap Türü", value: $accountType, isEditing: isEditing, isEditable: true)
+                BankInfoRow(icon: "💰", title: "Bakiye", value: $balance, isEditing: isEditing, isEditable: false) // burada düzenlenemez
 
                 Spacer()
             }
@@ -48,6 +48,7 @@ struct BankInfoRow: View {
     var title: String
     @Binding var value: String
     var isEditing: Bool
+    var isEditable: Bool  // yeni parametre
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -55,7 +56,7 @@ struct BankInfoRow: View {
                 .font(.subheadline)
                 .foregroundColor(.gray)
 
-            if isEditing {
+            if isEditing && isEditable {
                 TextField("\(title)", text: $value)
                     .padding(14)
                     .background(Color(.systemGray6))
@@ -73,6 +74,7 @@ struct BankInfoRow: View {
         .padding(.horizontal)
     }
 }
+
 
 
 struct BankAccountView_Previews: PreviewProvider {

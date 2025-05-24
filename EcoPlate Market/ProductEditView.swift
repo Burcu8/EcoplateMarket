@@ -15,68 +15,70 @@ import FirebaseAuth
 struct ProductEditView: View {
     @State private var id = ""
     @State private var name = ""
-        @State private var description = ""
-        @State private var price = ""
-        @State private var discounted_price = ""
-        @State private var grammage = ""
-        @State private var category = ""
-        @State private var expiry_date = Date()
-        @State private var productImage: UIImage? = nil
-        @State private var showingImagePicker = false
-        @State private var errorMessage: String?
+    @State private var description = ""
+    @State private var price = ""
+    @State private var discounted_price = ""
+    @State private var grammage = ""
+    @State private var category = ""
+    @State private var expiry_date = Date()
+    @State private var productImage: UIImage? = nil
+    @State private var showingImagePicker = false
+    @State private var errorMessage: String?
 
-    @State private var navigateToHome = false
-    
     @Environment(\.presentationMode) var presentationMode
     @State private var isLoading = false
+    @State private var showSuccessAlert = false
+
+    @FocusState private var focusedField: Field?
+
+    enum Field: Hashable {
+        case name, description, price, discountedPrice, grammage, category
+    }
 
     func saveProduct() {
         isLoading = true
         guard let marketid = Auth.auth().currentUser?.uid else {
             print("Kullanıcı oturumu yok!")
+            isLoading = false
             return
         }
 
         guard let price = Double(price), price > 0 else {
             errorMessage = "Lütfen geçerli bir normal fiyat girin."
+            isLoading = false
             return
         }
 
         guard let discounted_price = Double(discounted_price), discounted_price > 0 else {
             errorMessage = "Lütfen geçerli bir indirimli fiyat girin."
+            isLoading = false
             return
         }
 
         if name.isEmpty || description.isEmpty || grammage.isEmpty {
             errorMessage = "Lütfen tüm alanları doldurduğunuzdan emin olun."
+            isLoading = false
             return
         }
 
         guard let image = productImage,
               let imageData = image.jpegData(compressionQuality: 0.8) else {
             errorMessage = "Lütfen bir ürün görseli seçin."
+            isLoading = false
             return
         }
 
         let db = Firestore.firestore()
-
-        // Firestore referansı oluşturuluyor, ürünlerin kaydedileceği marketId koleksiyonu
         let marketRef = db.collection("markets").document(marketid).collection("products")
-
-        // Yeni bir ürün için ürün ID'si oluşturuluyor
-        let productRef = marketRef.document()  // Firebase otomatik olarak bir ID oluşturur
-        let productId = productRef.documentID  // Firestore'da oluşturulan ürün ID'sini alıyoruz
-
-        // ID'yi UI'da gösterilecek id değişkenine atıyoruz
+        let productRef = marketRef.document()
+        let productId = productRef.documentID
         self.id = productId
 
         let storageRef = Storage.storage().reference()
-        let imageRef = storageRef.child("products/\(productId)/main.jpg")  // Ürün fotoğrafı için yol
-
-        isLoading = true // Yükleniyor göstergesini açıyoruz
+        let imageRef = storageRef.child("products/\(productId)/main.jpg")
 
         imageRef.putData(imageData, metadata: nil) { metadata, error in
-            isLoading = false // Yükleniyor göstergesini kapatıyoruz
+            isLoading = false
             if let error = error {
                 errorMessage = "Fotoğraf yüklenemedi: \(error.localizedDescription)"
                 return
@@ -93,15 +95,14 @@ struct ProductEditView: View {
                     return
                 }
 
-                // Ürün verisini Firestore'a kaydetme
                 productRef.setData([
-                    "id": productId,  // Firestore'da oluşturulan ID'yi kaydediyoruz
+                    "id": productId,
                     "name": name,
                     "description": description,
                     "discounted_price": discounted_price,
                     "price": price,
                     "grammage": grammage,
-                    "expiry_date": expiry_date, // Expiry date burada doğru formatta olmalı
+                    "expiry_date": expiry_date,
                     "image_url": productImage,
                     "category": category
                 ]) { error in
@@ -109,22 +110,18 @@ struct ProductEditView: View {
                         errorMessage = "Veri kaydedilemedi: \(error.localizedDescription)"
                     } else {
                         errorMessage = nil
-                        presentationMode.wrappedValue.dismiss()  // Sayfayı kapatıyoruz
-                        print("Ürün başarıyla kaydedildi.")
+                        showSuccessAlert = true  // Önce alert göster
+                        // presentationMode.wrappedValue.dismiss() kaldırıldı
                     }
                 }
             }
         }
     }
-
-
-
-
+    
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 15) {
-                    // Fotoğraf Seçim Alanı
                     Button(action: {
                         showingImagePicker.toggle()
                     }) {
@@ -132,7 +129,7 @@ struct ProductEditView: View {
                             if let productImage = productImage {
                                 Image(uiImage: productImage)
                                     .resizable()
-                                    .scaledToFit() // scaledToFill yerine
+                                    .scaledToFit()
                                     .frame(width: 380, height: 260)
                                     .clipShape(RoundedRectangle(cornerRadius: 20))
                                     .overlay(
@@ -140,7 +137,6 @@ struct ProductEditView: View {
                                             .stroke(Color.blue, lineWidth: 3)
                                     )
                                     .shadow(radius: 10)
-
                             } else {
                                 RoundedRectangle(cornerRadius: 20)
                                     .fill(Color.gray.opacity(0.2))
@@ -160,25 +156,24 @@ struct ProductEditView: View {
                         ImagePicker(selectedImage: $productImage)
                     }
                     
-                    // Ürün Bilgileri
                     VStack(spacing: 16) {
                         Group {
-                            // Ürün Adı
                             TextField("Ürün Adı (Zorunlu)", text: $name)
+                                .focused($focusedField, equals: .name)
                                 .padding()
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                 .shadow(radius: 5)
                             
-                            // Ürün Açıklaması
                             TextField("Ürün Açıklaması (Zorunlu)", text: $description)
+                                .focused($focusedField, equals: .description)
                                 .padding()
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                 .shadow(radius: 5)
-                            
                             
                             HStack {
                                 TextField("Normal Fiyat (Zorunlu)", text: $price)
                                     .keyboardType(.decimalPad)
+                                    .focused($focusedField, equals: .price)
                                     .padding()
                                     .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                     .shadow(radius: 5)
@@ -186,6 +181,7 @@ struct ProductEditView: View {
                                 
                                 TextField("İndirimli Fiyat (Zorunlu)", text: $discounted_price)
                                     .keyboardType(.decimalPad)
+                                    .focused($focusedField, equals: .discountedPrice)
                                     .padding()
                                     .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                     .shadow(radius: 5)
@@ -193,18 +189,18 @@ struct ProductEditView: View {
                             }
                             
                             TextField("Kategori (Zorunlu)", text: $category)
+                                .focused($focusedField, equals: .category)
                                 .padding()
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                 .shadow(radius: 5)
                             
-                           
                             TextField("Gramaj (g) (Zorunlu)", text: $grammage)
                                 .keyboardType(.decimalPad)
+                                .focused($focusedField, equals: .grammage)
                                 .padding()
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                 .shadow(radius: 5)
                         }
-                        
                         
                         DatePicker("Son Kullanma Tarihi (Zorunlu)", selection: $expiry_date, displayedComponents: .date)
                             .padding()
@@ -213,7 +209,6 @@ struct ProductEditView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Hata Mesajı
                     if let errorMessage = errorMessage {
                         Text(errorMessage)
                             .foregroundColor(.red)
@@ -228,7 +223,7 @@ struct ProductEditView: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(.primaryA)
+                            .background(Color.primaryA)
                             .cornerRadius(12)
                             .shadow(radius: 10)
                     }
@@ -236,17 +231,24 @@ struct ProductEditView: View {
                 }
                 .padding(.top, 16)
             }
+            .onTapGesture {
+                focusedField = nil
+            }
             .navigationBarTitle("Ürün Yükle", displayMode: .inline)
+        }
+        .alert("Başarılı", isPresented: $showSuccessAlert) {
+            Button("Tamam") {
+                presentationMode.wrappedValue.dismiss()  // Alert kapatılınca sayfayı kapat
+            }
+        } message: {
+            Text("Ürün başarıyla yüklendi.")
         }
     }
 }
+
 
 struct ProductEditView_Previews: PreviewProvider {
     static var previews: some View {
         ProductEditView()
     }
 }
-
-
-
-

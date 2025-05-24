@@ -8,8 +8,12 @@
 import SwiftUI
 
 struct DynamicProductCardView: View {
-    @ObservedObject var product: DynamicProduct // Bu model Firestore'dan alınacak veriyi temsil ediyor
-    
+    @ObservedObject var product: DynamicProduct
+
+    // SKT geçmiş mi kontrolü
+    var isExpired: Bool {
+        return product.expiry_date < Date()
+    }
 
     var body: some View {
         VStack {
@@ -46,17 +50,25 @@ struct DynamicProductCardView: View {
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
-            
             Text("\(product.grammage), fiyat")
                 .font(.system(size: 17))
                 .foregroundColor(.gray)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
-            Text("\(formattedDate(product.expiry_date))")
-                .font(.system(size: 12))
-                .foregroundColor(.gray)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
+
+            // SKT bilgisi veya uyarı
+            if isExpired {
+                Text("SKT DOLDU!")
+                    .font(.system(size: 17))
+                    .foregroundColor(.red)
+                    .bold()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Text("\(formattedDate(product.expiry_date))")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             VStack {
                 if product.discounted_price != product.price {
                     Text("₺\(String(format: "%.2f", product.price))")
@@ -67,7 +79,7 @@ struct DynamicProductCardView: View {
                         .padding(.bottom, 1)
                         .offset(y: 15)
                 }
-                
+
                 Text("₺\(String(format: "%.2f", product.discounted_price))")
                     .font(.system(size: 22))
                     .bold()
@@ -75,7 +87,7 @@ struct DynamicProductCardView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .offset(y: 10)
             }
-            
+
         }
         .frame(width: 160, height: 250)
         .padding(10)
@@ -85,12 +97,14 @@ struct DynamicProductCardView: View {
                 .stroke(Color.gray.opacity(0.2), lineWidth: 1)
         )
     }
+
     func formattedDate(_ date: Date) -> String {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            return formatter.string(from: date)
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter.string(from: date)
     }
 }
+
 
 
 struct DynamicProductCardView_Previews: PreviewProvider {

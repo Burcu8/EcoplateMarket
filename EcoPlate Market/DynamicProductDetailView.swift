@@ -16,6 +16,11 @@ struct DynamicProductDetailView: View {
     @State private var showEditView = false
     @Binding var isUserLoggedIn: Bool
     
+    var isExpired: Bool {
+        return product.expiry_date < Date()
+    }
+
+    
     init(product: DynamicProduct, isUserLoggedIn: Binding<Bool>) {
         _product = State(initialValue: product)
         _isUserLoggedIn = isUserLoggedIn
@@ -145,9 +150,18 @@ struct DynamicProductDetailView: View {
                     .font(.subheadline)
                     .foregroundColor(.gray)
                 
-                Text("SKT: \(formattedDate(product.expiry_date))")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
+                if isExpired {
+                    Text("SKT doldu, bu ürün satılamaz!")
+                        .font(.system(size: 20))
+                        .foregroundColor(.red)
+                        .bold()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Text("\(formattedDate(product.expiry_date))")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+
                 
                 HStack(spacing: 15) {
                     if product.discounted_price != product.price {

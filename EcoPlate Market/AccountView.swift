@@ -88,9 +88,13 @@ struct AccountView: View {
                                                 AccountOptionView(title: "🔔 Bildirimler")
                                             }
                                             Divider()
-                                            AccountOptionView(title: "❓ Yardım")
+                                            NavigationLink(destination: HelpView()) {
+                                                AccountOptionView(title: "❓ Yardım")
+                                            }
                                             Divider()
-                                            AccountOptionView(title: "📝 Şikayetlerim")
+                                            NavigationLink(destination: ComplaintsView()) {
+                                                AccountOptionView(title: "📝 Şikayetlerim")
+                                            }
                                             Divider()
                                         }
                                         .foregroundColor(.black)

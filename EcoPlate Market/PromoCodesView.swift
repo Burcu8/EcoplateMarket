@@ -5,11 +5,24 @@
 //  Created by Burcu Kamilçelebi on 10.04.2025.
 //
 import SwiftUI
+import FirebaseFirestore
+import FirebaseAuth
+
+struct PromoCode: Identifiable {
+    var id: String
+    var promotionName: String
+    var promotionPercentage: Int
+}
 
 struct PromoCodesView: View {
-    @State private var promoCodes: [String] = ["PROMO10", "DISCOUNT20", "SUMMER30"]
+    @State private var promoCodes: [PromoCode] = []
     @State private var newPromoCode: String = ""
-    
+    @State private var newPercentage: String = ""
+
+    private var marketId: String {
+        Auth.auth().currentUser?.uid ?? ""
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             
@@ -18,36 +31,22 @@ struct PromoCodesView: View {
                 .bold()
                 .padding(.bottom, 10)
             
-            // 📋 Listeleme Alanı
+            // 📋 Listeleme
             ScrollView {
                 VStack(spacing: 12) {
-                    ForEach(promoCodes, id: \.self) { code in
+                    ForEach(promoCodes) { code in
                         HStack {
-                            Text(code)
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                print("\(code) kodu kullanıldı.")
-                                // Burada promosyon kodunu kullanma işlemi yapılabilir (örneğin, Firestore'dan işaretleme/silme)
-                                promoCodes.removeAll { $0 == code } // Kod kullanılınca listeden çıkar
-                            }) {
-                                Text("Kullan")
+                            VStack(alignment: .leading) {
+                                Text(code.promotionName)
+                                    .font(.headline)
+                                Text("%\(code.promotionPercentage) indirim")
                                     .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(.primaryA)
-                                    .cornerRadius(10)
                             }
-                            
+
+                            Spacer()
+
                             Button(action: {
-                                // Kod silme işlemi yapılacak
-                                promoCodes.removeAll { $0 == code }
-                                print("\(code) kodu silindi.")
+                                deletePromoCode(id: code.id)
                             }) {
                                 Text("Sil")
                                     .font(.subheadline)
@@ -62,7 +61,6 @@ struct PromoCodesView: View {
                         .padding()
                         .background(Color(.systemGray6))
                         .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.03), radius: 1, x: 0, y: 1)
                     }
                 }
             }
@@ -76,45 +74,89 @@ struct PromoCodesView: View {
                     .bold()
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                HStack {
-                    TextField("Kodu Girin", text: $newPromoCode)
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .font(.body)
-                        .autocapitalization(.allCharacters)
-                        .disableAutocorrection(true)
-                        .shadow(color: Color.black.opacity(0.08), radius: 5, x: 0, y: 2)
+                TextField("Kod Adı (örneğin: ecoplate)", text: $newPromoCode)
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(12)
 
-                    Button(action: {
-                        let trimmed = newPromoCode.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !trimmed.isEmpty else { return }
-                        promoCodes.insert(trimmed, at: 0) // Yeni kodu en başa ekle
-                        newPromoCode = "" // Kod girdikten sonra alanı temizle
-                        print("\(trimmed) kodu eklendi.")
-                    }) {
-                        Text("Ekle")
-                            .font(.body)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(Color.primaryA)
-                            .cornerRadius(10)
-                    }
+                TextField("İndirim Oranı (%)", text: $newPercentage)
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(12)
+                    .keyboardType(.numberPad)
+
+                Button(action: addPromoCode) {
+                    Text("Ekle")
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.primaryA) // İsteğe göre Color.primaryA
+                        .cornerRadius(10)
                 }
-                .padding(.horizontal)
             }
-            .padding(.vertical, 16)
+            .padding()
             .background(Color(.systemGray6))
             .cornerRadius(15)
-            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
 
             Spacer()
         }
         .padding()
-        .navigationTitle("Promosyonlarım")
-        .background(Color(.systemGroupedBackground))
+        .onAppear {
+            if !marketId.isEmpty {
+                fetchPromoCodes()
+            }
+        }
+    }
+
+    // 🔄 Firestore’dan verileri çek (Yeni root-level yol)
+    func fetchPromoCodes() {
+        let db = Firestore.firestore()
+        db.collection("promotion_codes")
+            .whereField("market_id", isEqualTo: marketId)
+            .getDocuments { snapshot, error in
+                if let documents = snapshot?.documents {
+                    self.promoCodes = documents.compactMap { doc in
+                        let data = doc.data()
+                        let name = data["promotion_name"] as? String ?? ""
+                        let percentage = data["promotion_percentage"] as? Int ?? 0
+                        return PromoCode(id: doc.documentID, promotionName: name, promotionPercentage: percentage)
+                    }
+                }
+            }
+    }
+
+    // ➕ Promosyon kodu ekle (Yeni root-level yol)
+    func addPromoCode() {
+        guard !newPromoCode.isEmpty,
+              let percentage = Int(newPercentage),
+              !marketId.isEmpty else { return }
+
+        let db = Firestore.firestore()
+        let newCode = [
+            "promotion_name": newPromoCode,
+            "promotion_percentage": percentage,
+            "market_id": marketId
+        ] as [String : Any]
+
+        db.collection("promotion_codes").addDocument(data: newCode) { error in
+            if error == nil {
+                newPromoCode = ""
+                newPercentage = ""
+                fetchPromoCodes()
+            }
+        }
+    }
+
+    // 🗑️ Promosyon kodu sil (Yeni root-level yol)
+    func deletePromoCode(id: String) {
+        let db = Firestore.firestore()
+        db.collection("promotion_codes").document(id).delete { error in
+            if error == nil {
+                fetchPromoCodes()
+            }
+        }
     }
 }
 
@@ -123,7 +165,3 @@ struct PromoCodesView_Previews: PreviewProvider {
         PromoCodesView()
     }
 }
-
-
-
-

@@ -23,6 +23,7 @@ struct Product2 {
     var weight: String
     var expirationDate: Date
     var image: UIImage?
+    //var imageUrl: String?
     var category: String
     
     init(id: String, name: String, description: String, normalPrice: Double, oldPrice: Double, weight: String, expirationDate: Date, image: UIImage?, category: String) {
@@ -40,6 +41,14 @@ struct Product2 {
 
 
 struct ProductEditSheetView: View {
+    
+    // Focus durumlarını tutmak için enum tanımlayalım
+    enum Field: Hashable {
+        case productName, productDescription, normalPrice, oldPrice, productCategory, productWeight
+    }
+    
+    @FocusState private var focusedField: Field?   // FocusState tanımı
+    
     @State private var productid: String = ""
     @State private var productName: String = ""
     @State private var productDescription: String = ""
@@ -183,12 +192,14 @@ struct ProductEditSheetView: View {
                                 .padding()
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                 .shadow(radius: 5)
+                                .focused($focusedField, equals: .productName)
                             
                             // Ürün Açıklaması
                             TextField("Ürün Açıklaması (Zorunlu)", text: $productDescription)
                                 .padding()
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                 .shadow(radius: 5)
+                                .focused($focusedField, equals: .productDescription)
                             
                             
                             HStack {
@@ -198,6 +209,7 @@ struct ProductEditSheetView: View {
                                     .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                     .shadow(radius: 5)
                                     .frame(maxWidth: .infinity)
+                                    .focused($focusedField, equals: .oldPrice)
                                 
                                 TextField("İndirimli Fiyat (Zorunlu)", text: $normalPrice)
                                     .keyboardType(.decimalPad)
@@ -205,11 +217,13 @@ struct ProductEditSheetView: View {
                                     .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                     .shadow(radius: 5)
                                     .frame(maxWidth: .infinity)
+                                    .focused($focusedField, equals: .normalPrice)
                             }
                             TextField("Kategori (Zorunlu)", text: $productCategory)
                                 .padding()
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                 .shadow(radius: 5)
+                                .focused($focusedField, equals: .productCategory)
                             
                            
                             TextField("Gramaj (g) (Zorunlu)", text: $productWeight)
@@ -217,6 +231,7 @@ struct ProductEditSheetView: View {
                                 .padding()
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                 .shadow(radius: 5)
+                                .focused($focusedField, equals: .productWeight)
                         }
                         
                         
@@ -276,6 +291,10 @@ struct ProductEditSheetView: View {
                 .padding(.top, 16)
             }
             .navigationBarTitle("Ürün Düzenleme", displayMode: .inline)
+            // Boş alana dokunulduğunda focus'u kaldır ve klavyeyi kapat
+              .onTapGesture {
+                  focusedField = nil
+              }
         }
     }
 }
