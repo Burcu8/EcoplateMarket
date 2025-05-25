@@ -35,6 +35,9 @@ struct ProductEditView: View {
         case name, description, price, discountedPrice, grammage, category
     }
 
+    // Kategori seçenekleri
+    let categoryOptions = ["Bakliyat", "Et Ürünleri", "Fırın", "İçecek", "Meyve & Sebze", "Temel Gıda", "Süt Ürünleri", "Yağ"]
+
     func saveProduct() {
         isLoading = true
         guard let marketid = Auth.auth().currentUser?.uid else {
@@ -55,7 +58,7 @@ struct ProductEditView: View {
             return
         }
 
-        if name.isEmpty || description.isEmpty || grammage.isEmpty {
+        if name.isEmpty || description.isEmpty || grammage.isEmpty || category.isEmpty {
             errorMessage = "Lütfen tüm alanları doldurduğunuzdan emin olun."
             isLoading = false
             return
@@ -110,14 +113,13 @@ struct ProductEditView: View {
                         errorMessage = "Veri kaydedilemedi: \(error.localizedDescription)"
                     } else {
                         errorMessage = nil
-                        showSuccessAlert = true  // Önce alert göster
-                        // presentationMode.wrappedValue.dismiss() kaldırıldı
+                        showSuccessAlert = true
                     }
                 }
             }
         }
     }
-    
+
     var body: some View {
         NavigationView {
             ScrollView {
@@ -155,7 +157,7 @@ struct ProductEditView: View {
                     .sheet(isPresented: $showingImagePicker) {
                         ImagePicker(selectedImage: $productImage)
                     }
-                    
+
                     VStack(spacing: 16) {
                         Group {
                             TextField("Ürün Adı (Zorunlu)", text: $name)
@@ -163,13 +165,13 @@ struct ProductEditView: View {
                                 .padding()
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                 .shadow(radius: 5)
-                            
+
                             TextField("Ürün Açıklaması (Zorunlu)", text: $description)
                                 .focused($focusedField, equals: .description)
                                 .padding()
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                 .shadow(radius: 5)
-                            
+
                             HStack {
                                 TextField("Normal Fiyat (Zorunlu)", text: $price)
                                     .keyboardType(.decimalPad)
@@ -178,7 +180,7 @@ struct ProductEditView: View {
                                     .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                     .shadow(radius: 5)
                                     .frame(maxWidth: .infinity)
-                                
+
                                 TextField("İndirimli Fiyat (Zorunlu)", text: $discounted_price)
                                     .keyboardType(.decimalPad)
                                     .focused($focusedField, equals: .discountedPrice)
@@ -187,12 +189,17 @@ struct ProductEditView: View {
                                     .shadow(radius: 5)
                                     .frame(maxWidth: .infinity)
                             }
-                            
-                            TextField("Kategori (Zorunlu)", text: $category)
-                                .focused($focusedField, equals: .category)
-                                .padding()
-                                .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
-                                .shadow(radius: 5)
+
+                            // Picker ile kategori seçimi
+                            Menu {
+                                ForEach(categoryOptions, id: \.self) { option in
+                                    Button(option) {
+                                        category = option
+                                    }
+                                }
+                            } label: {
+                                categoryLabel
+                            }.buttonStyle(PlainButtonStyle())
                             
                             TextField("Gramaj (g) (Zorunlu)", text: $grammage)
                                 .keyboardType(.decimalPad)
@@ -201,20 +208,20 @@ struct ProductEditView: View {
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                                 .shadow(radius: 5)
                         }
-                        
+
                         DatePicker("Son Kullanma Tarihi (Zorunlu)", selection: $expiry_date, displayedComponents: .date)
                             .padding()
                             .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
                             .shadow(radius: 5)
                     }
                     .padding(.horizontal)
-                    
+
                     if let errorMessage = errorMessage {
                         Text(errorMessage)
                             .foregroundColor(.red)
                             .padding()
                     }
-                    
+
                     Button(action: {
                         saveProduct()
                     }) {
@@ -223,7 +230,7 @@ struct ProductEditView: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.primaryA)
+                            .background(Color.primaryA) // Eğer Color.primaryA tanımlı değilse blue olarak ayarlandı
                             .cornerRadius(12)
                             .shadow(radius: 10)
                     }
@@ -236,15 +243,30 @@ struct ProductEditView: View {
             }
             .navigationBarTitle("Ürün Yükle", displayMode: .inline)
         }
+        
         .alert("Başarılı", isPresented: $showSuccessAlert) {
             Button("Tamam") {
-                presentationMode.wrappedValue.dismiss()  // Alert kapatılınca sayfayı kapat
+                presentationMode.wrappedValue.dismiss()
             }
         } message: {
             Text("Ürün başarıyla yüklendi.")
         }
     }
+    // ✅ Menü için ayrı view
+        var categoryLabel: some View {
+            HStack {
+                Text(category.isEmpty ? "Kategori Seçiniz (Zorunlu)" : category)
+                    .foregroundColor(category.isEmpty ? .gray : .primary)
+                Spacer()
+                Image(systemName: "chevron.down")
+                    .foregroundColor(.gray)
+            }
+            .padding()
+            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
+            .shadow(radius: 5)
+        }
 }
+
 
 
 struct ProductEditView_Previews: PreviewProvider {
